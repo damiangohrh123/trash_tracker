@@ -13,4 +13,45 @@ The project is split into two main parts: the machine learning model and the mob
 
 The second part of the project is the mobile app itself, which I am building using Flutter. Flutter is a framework that lets the app run on both Android and iOS. The app will use the phone's camera to see the trash and then use the TFLite model to figure out what it is. Everything happens locally on the phone, so the user just has to point their camera at a piece of trash to see the classification pop up on the screen in real time.
 
+## 3 Model Training
+### 3.1 Phase 1: Baseline Training and Results
+The first step of the project was to run an initial training session to see how well a small model could handle the garbage dataset. I used a dataset of about 10,000 images that were divided into seven categories. For the hardware, I used an NVIDIA RTX 5080 GPU, which made the training much faster. I ran the process for 100 epochs, which took about four hours to complete. This gave me a baseline model that I could use to measure progress in the future.
+
+After the training, the model gave me several metrics to show how it performed. One of them is called mAP50, which stands for mean Average Precision. The model got a score of 0.60 (or 60%). This means that in this first phase, the model is correct about 60% of the time when it identifies an object. For precision and recall for each category, Glass had a high precision of 88%, meaning when the model says something is glass, it is usually right. However, Paper had a very low score of only 15%. This happened because the dataset was not balanced. There were over 13,000 instances of biodegradable waste but only 33 instances of paper. Because of this, the model "biased" its guesses toward the bigger categories since it saw them so much more often during training.
+
+<div align="center">
+    <img src="document_images/phase1_metrics.png" width="600">
+    <p align="center"><strong>Fig. 1. </strong>Breakdown of precision, recall, and mAP scores across the seven garbage categories.<p>
+</div>
+
+To see exactly how the model was thinking, I ran it on some test images. The results were saved in a folder called predict. In this folder, the model takes the original images and draws bounding boxes over what it finds. Each box has a label and a "confidence score" showing how sure the model is. In one test, the model looked at a clear glass bottle but labeled it as PLASTIC 0.80. Because clear glass and clear plastic look very similar, the model got confused. This shows it needs more varied examples of glass in the next phase.
+
+<div align="center">
+    <img src="document_images/phase1_glass.jpg" width="300">
+    <p align="center"><strong>Fig. 2. </strong>An example of model confusion where a clear glass object was incorrectly identified as plastic with an 80% confidence score.<p>
+</div>
+
+On images like the tomatoes and the cardboard box, the model drew way too many boxes. It found the object correctly, but it created extra boxes for different parts of the same item. This makes the screen look messy and confusing for a user.
+
+<div align="center">
+    <img src="document_images/phase1_tomatoes.jpg" width="300">
+    <p align="center"><strong>Fig. 3. </strong>The model generates multiple overlapping bounding boxes for individual items, such as these tomatoes, creating a cluttered output.<p>
+</div>
+
+<div align="center">
+    <img src="document_images/phase1_cardboard.jpg" width="300">
+    <p align="center"><strong>Fig. 4. </strong>Duplicate "Cardboard" detections on a single box.<p>
+</div>
+
+In another case, a cardboard bar box was labeled as PAPER 0.86. This is likely because cardboard and paper have similar textures, and since the model has very few examples of paper, it is struggling to tell the two apart correctly.
+
+<div align="center">
+    <img src="document_images/phase1_cardboard2.jpg" width="300">
+    <p align="center"><strong>Fig. 5. </strong>A cardboard box incorrectly labeled as "Paper" with 86% confidence, likely due to visual similarities and a small paper dataset.<p>
+</div>
+
+Even with the accuracy issues in some categories, the model proved that it is fast enough for a phone. On my computer, it only took about 1.3 milliseconds to process a single image. This is a very good sign because it means that even on a slower phone processor, the app should still be able to show results in real time without any lag.
+
+
+
 ## References
