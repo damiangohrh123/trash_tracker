@@ -94,4 +94,45 @@ While Phase 2 successfully increased overall robustness, specific images in the 
 
 To resolve this granularity conflict in Phase 3 without sacrificing the system's ability to count individual items, a two-pronged strategic approach will be implemented. First, a Labeling Refinement protocol will be introduced in the next data iteration to teach the model to recognize "Piles" as their own entity; large, amorphous clusters of waste will be annotated with a single encompassing bounding box, while distinct, separated items will remain individually labeled. Second, the system will utilize IoU (Intersection over Union) Threshold Tuning within the application code. By implementing a more aggressive IoU threshold (e.g., merging boxes with an overlap greater than 45%), the model can be forced to consolidate highly redundant detections into a single clean box while still allowing side-by-side items with minimal overlap to be identified as unique instances.
 
+### 3.3 Phase 3: Dataset Rebalancing and Training Extension
+Phase 3 was designed to address the high background-miss rate for Paper and the bias for Biodegradable identified in Phase 2 through class rebalancing. This was achieved by introducing over 8,000 new "Paper" instances and cleaning the "Biodegradable" class of redundant ground-truth annotations. To ensure these features were deeply integrated into the model’s weights, the training duration was extended to 150 epochs with a batch size of 32. The global mAP50 reached 0.613, representing a successful stabilization of the model despite the increased complexity of the dataset.
+
+<div align="center">
+    <img src="document_images/phase3_metrics.png" width="600">
+    <p align="center"><strong>Fig. 11. </strong>Breakdown of precision, recall, and mAP scores across the seven garbage categories for phase 3.<p>
+</div>
+
+The Confusion Matrix (Fig. 12) demonstrates a breakthrough in the Paper category. While Phase 2 saw a 73% background-miss rate, the Phase 3 model now successfully proposes regions for paper but frequently misclassifies them as Biodegradable (61%). This might be due to the dataset's imbalance, with 7,490 Biodegradable instances vs only 31 Paper instances in the validation set, the model has developed a probabilistic bias toward the majority class for light-colored, matte textures.
+
+<div align="center">
+    <img src="document_images/phase3_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 12. </strong>High reliability is maintained in Glass (76%) and Metal (67%). However, the matrix reveals "Identity Confusion" for the Paper category. While background misses decreased, 61% of Paper instances are now misclassified as Biodegradable.<p>
+</div>
+
+The F1-Confidence Curve (Fig. 13) confirms that the model's optimal operating point has shifted to 0.295. This indicates that the Phase 3 model is more certain of its detections, allowing for a higher confidence cutoff. This shift will result in fewer false positives during real-time tracking without sacrificing detection accuracy.
+
+<div align="center">
+    <img src="document_images/phase3_BoxF1_curve.png" width="600">
+    <p align="center"><strong>Fig. 13. </strong>The optimal operating threshold has shifted to 0.295 with a peak F1 score of 0.61.<p>
+</div>
+
+Visual analysis of the Phase 3 validation batches (Fig. 14, Fig 15, Fig, 16) reveals a significant improvement in Spatial Logic. The model is now much better at isolating individual items in dense piles without the huge amounts of overlapping bounding boxes seen in previous iterations. However, a persistent label bias remains where items labeled as CARDBOARD in the ground truth are consistently relabeled as BIODEGRADABLE in predictions.
+
+<div align="center">
+    <img src="document_images/phase3_val_batch0_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 14. </strong>The model demonstrates exceptional feature extraction for metallic textures and cylindrical shapes, achieving confidence scores between 0.8 and 1.0 across various lighting conditions and orientations.<p>
+</div>
+
+<div align="center">
+    <img src="document_images/phase3_val_batch1_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 15. </strong>While spatial isolation of organic items has improved, this batch highlights a persistent label bias where "Cardboard" ground-truth labels are incorrectly predicted as "Biodegradable" by the model.<p>
+</div>
+
+<div align="center">
+    <img src="document_images/phase3_val_batch2_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 16. </strong>The model successfully identifies individual components within dense organic piles. However, overlapping bounding boxes remain present in complex textures, suggesting a need for more aggressive NMS (Non-Maximum Suppression) tuning in the application layer.<p>
+</div>
+
+Phase 3 successfully transitioned the model into a robust, high-performance system, achieving a 0.613 mAP50. The primary breakthrough was the resolution of the "Paper" category’s background-miss rate, suppressing redundant huge amounts of bounding boxes in organic clusters to prioritize individual object counts. Despite these improvements, a persistent "Identity Confusion" remains between light-colored processed materials and high-volume organic matter, driven by a significant probabilistic bias toward the Biodegradable class (7,490 vs. 31 instances). Phase 4 will pivot from raw data volume toward integrating null negative samples. 
+
 ## References
