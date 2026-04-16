@@ -135,4 +135,7 @@ Visual analysis of the Phase 3 validation batches (Fig. 14, Fig 15, Fig, 16) rev
 
 Phase 3 successfully transitioned the model into a robust, high-performance system, achieving a 0.613 mAP50. The primary breakthrough was the resolution of the "Paper" category’s background-miss rate, suppressing redundant huge amounts of bounding boxes in organic clusters to prioritize individual object counts. Despite these improvements, a persistent "Identity Confusion" remains between light-colored processed materials and high-volume organic matter, driven by a significant probabilistic bias toward the Biodegradable class (7,490 vs. 31 instances). Phase 4 will pivot from raw data volume toward integrating null negative samples. 
 
+### 3.4 Phase 4
+Phase 4 pivots toward precision engineering by integrating 800 "Null" negative samples to calibrate the background and eliminate false positives on empty surfaces, while bumping the training resolution to 800px to amplify the critical textural differences between matte paper and organic grain. This transition is further reinforced by implementing texture-aware Adaptive Equalization preprocessing, which sharpens edge detection to resolve persistent white-on-white detection failures and stabilize the model for real-world deployment.
+
 ## References
