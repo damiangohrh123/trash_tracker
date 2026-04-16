@@ -1,0 +1,59 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code - keeping it commented in case you want to share launch settings
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Android Studio / Android Build
+/android/app/debug
+/android/app/profile
+/android/app/release
+**/android/local.properties
+**/android/.gradle
+**/android/app/build/
+*.keystore
+*.jks
+
+# --- PROJECT SPECIFIC (Trash Tracker) ---
+
+# Ignore the massive 800px datasets (Images are too big for GitHub)
+# Keep your code, but keep your raw images local or in a cloud drive
+**/datasets/
+**/data/raw/
+
+# Ignore YOLO training checkpoints and logs
+**/runs/
+**/wandb/
+*.pt.tmp
+
+# Keep the final model weights! 
+# (Don't ignore .tflite or .pt if they are the finished versions)
