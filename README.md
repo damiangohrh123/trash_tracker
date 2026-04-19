@@ -135,7 +135,45 @@ Visual analysis of the Phase 3 validation batches (Fig. 14, Fig 15, Fig, 16) rev
 
 Phase 3 successfully transitioned the model into a robust, high-performance system, achieving a 0.613 mAP50. The primary breakthrough was the resolution of the "Paper" category’s background-miss rate, suppressing redundant huge amounts of bounding boxes in organic clusters to prioritize individual object counts. Despite these improvements, a persistent "Identity Confusion" remains between light-colored processed materials and high-volume organic matter, driven by a significant probabilistic bias toward the Biodegradable class (7,490 vs. 31 instances). Phase 4 will pivot from raw data volume toward integrating null negative samples. 
 
-### 3.4 Phase 4
-Phase 4 pivots toward precision engineering by integrating 800 "Null" negative samples to calibrate the background and eliminate false positives on empty surfaces, while bumping the training resolution to 800px to amplify the critical textural differences between matte paper and organic grain. This transition is further reinforced by implementing texture-aware Adaptive Equalization preprocessing, which sharpens edge detection to resolve persistent white-on-white detection failures and stabilize the model for real-world deployment.
+### 3.4 Phase 4: Precision Engineering and Background Calibration
+Phase 4 emphasized technical refinements to stop false detections and fix the misidentification between processed materials and organic matter. This involved adding 800 "Null" negative examples to tune the background and increasing training resolution to 800px to better distinguish surface textures. Additionally, applying texture-sensitive Adaptive Equalization sharpening helped the system fix ongoing errors with pale objects on pale backgrounds. These structural changes boosted the global mAP50 to 0.6888, marking a notable 12.4% relative gain over Phase 3.
+
+<div align="center">
+    <img src="document_images/phase4_metrics.png" width="600">
+    <p align="center"><strong>Fig. 17. </strong>Phase 4 performance breakdown shows a massive stabilization of the Paper category (0.758 mAP50) and consistent high performance in Glass (0.819 mAP50).<p>
+</div>
+
+The Normalized Confusion Matrix (Fig. 18) confirms the success of the background calibration. False positives on empty surfaces (Background misses) have been significantly reduced across all categories, specifically for Paper, which now has a 74% true positive rate. While some "Identity Confusion" persists, specifically with 61% of Biodegradable items being misclassified as Background, this is a trade-off that ensures the model remains "silent" until actual waste is clearly identified, drastically improving real-world usability.
+
+<div align="center">
+    <img src="document_images/phase4_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 18. </strong>The confusion matrix highlights a breakthrough in precision. The model is now much more conservative, preferring to miss a vague organic shape rather than propose a false detection on a clean floor.<p>
+</div>
+
+The F1-Confidence Curve (Fig. 19) shows the optimal operating threshold has shifted to 0.272 with a peak F1 score of 0.67. The curve for Paper (purple) is notably higher and broader than in previous phases, indicating the model is now highly confident in identifying processed textures even at varying confidence levels.
+
+<div align="center">
+    <img src="document_images/phase4_BoxF1_curve.png" width="600">
+    <p align="center"><strong>Fig. 19. </strong>Every category now peaks higher on the F1 scale, with the overall average hitting 0.67, representing a more stable and dependable recognition framework.<p>
+</div>
+
+Visual analysis of Phase 4 validation batches (Fig. 20, Fig. 21, Fig. 22) demonstrates the impact of the 800px resolution scaling. In plastic-heavy samples (Fig. 20), the model successfully isolates individual crinkled textures and transparent layers with confidence scores frequently reaching 0.9 to 1.0. Crucially, the Negative Sample integration is validated in the environment batches (Fig. 21), where complex backgrounds yield zero false positives. However, analysis of dense organic clusters (Fig. 22) reveals that the model still suffers from a "bounding box explosion." Despite the higher accuracy, the model generates excessive overlapping predictions for single items within a pile, indicating that the NMS (Non-Maximum Suppression) or the model's clustering logic requires further tuning to prioritize individual object counts.
+
+<div align="center">
+    <img src="document_images/phase4_val_batch0_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 20. </strong>High-resolution scaling enables the detection of clear and stacked plastic objects with great certainty, maintaining spatial logic even in messy environments.<p>
+</div>
+
+<div align="center">
+    <img src="document_images/phase4_val_batch1_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 21. </strong>Background calibration results: The model correctly ignores complex non-waste environments, a critical requirement for a stable mobile deployment.<p>
+</div>
+
+<div align="center">
+    <img src="document_images/phase4_biodegradable.jpg" width="500">
+    <p align="center"><strong>Fig. 22. </strong>While the model successfully extracts features in dense organic clusters, it continues to suffer from redundant bounding boxes. Multiple overlapping predictions are visible for single items, suggesting a persistent challenge in spatial deduplication within the "Biodegradable" class.<p>
+</div>
+
+Phase 4 successfully transformed the system into a deployment-ready model, achieving a 0.6888 mAP50. The primary achievement was the elimination of "ghost" boxes and the refinement of the Paper class. While the redundancy in bounding boxes for organic piles remains a visual hurdle, the current metrics provide a high-sensitivity foundation. The model is now prepared for final export and integration into the Trash Tracker Flutter application.
 
 ## References
