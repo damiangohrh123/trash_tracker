@@ -1,0 +1,6 @@
+Glass
+Metal
+Paper
+Plastic
+Biodegradable
+Non-Recyclable
