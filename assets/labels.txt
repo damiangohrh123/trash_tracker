@@ -1,6 +1,6 @@
-Glass
-Metal
-Paper
-Plastic
-Biodegradable
-Non-Recyclable
+BIODEGRADABLE
+CARDBOARD
+GLASS
+METAL
+PAPER
+PLASTIC
