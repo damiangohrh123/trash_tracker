@@ -18,8 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# VS Code - keeping it commented in case you want to share launch settings
-#.vscode/
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -40,6 +39,7 @@ migrate_working_dir/
 **/android/local.properties
 **/android/.gradle
 **/android/app/build/
+**/android/build/
 *.keystore
 *.jks
 

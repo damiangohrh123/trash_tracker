@@ -1,50 +1,35 @@
 # Model Workflow
 
-This project uses one runtime model path:
+Runtime assets:
 
 - `assets/best_float32.tflite`
 - `assets/labels.txt`
 
 ## Rules
 
-1. Do not append raw bytes/JSON/FlatBuffer blobs to a `.tflite` file.
-2. Replace `assets/best_float32.tflite` only with a clean export from your training/conversion pipeline.
-3. Keep only one active runtime model in `assets/` to avoid confusion.
-4. If you generate metadata, use official TensorFlow Lite metadata tooling only.
+1. Do not append raw bytes or JSON to `.tflite` files.
+2. Replace `assets/best_float32.tflite` only with a clean Ultralytics export.
+3. Keep one active runtime model in `assets/`.
+4. Keep `labels.txt` class order aligned with training `data.yaml`.
 
-## Pre-run checklist
-
-1. Confirm model file exists:
-   - `assets/best_float32.tflite`
-2. Confirm labels file exists:
-   - `assets/labels.txt`
-3. Optional metadata check:
-   - `python verify_model_metadata.py`
-   - or `python verify_model_metadata.py assets/best_float32.tflite`
-
-## Notes
-
-- The app uses **`tflite_flutter`** (not ML Kit) so it can run **Ultralytics YOLO** exports. ML Kit custom object detection expects a different model contract than typical YOLO TFLite outputs.
-- The app copies `assets/best_float32.tflite` and `assets/labels.txt` at runtime before loading the interpreter.
-- Any experimental scripts should live outside the runtime path and should never mutate the production model file in place.
-
-## Export from Jupyter (Ultralytics YOLO)
-
-After training, export a clean TFLite from your best weights (adjust path and `imgsz` to match training):
+## Export from Jupyter
 
 ```python
 from ultralytics import YOLO
 
 model = YOLO("path/to/best.pt")
-model.export(format="tflite", imgsz=640)
+model.export(format="tflite", imgsz=800, int8=False)
 ```
 
-Copy the generated `.tflite` into `assets/best_float32.tflite` (or change the filename in `pubspec.yaml` and `lib/main.dart` to match).
+Copy the exported `.tflite` to `assets/best_float32.tflite`.
 
-### Input layout
+## App decoding contract
 
-The app detects **NHWC** `[1, H, W, 3]` vs **NCHW** `[1, 3, H, W]` from the model input tensor shape and preprocesses accordingly. If your export uses different normalization (e.g. letterbox, mean/std), update `_buildInputTensor` in `lib/main.dart`.
+Current model contract:
 
-### Output decoding
+- Input: `[1, 800, 800, 3]`, float RGB normalized to `[0, 1]`
+- Output: `[1, 300, 6]`
+- Row format: `x1, y1, x2, y2, confidence, class_id` (normalized xyxy)
+- Confidence threshold: `0.25` (see `lib/detection_parser.dart`)
 
-Inference runs and shows a **debug summary** of raw output values. Next step is to implement YOLO-specific decode + NMS for your exact output tensor shape (Ultralytics version dependent).
+Next planned feature: pause camera preview and render bounding boxes on captured image.
