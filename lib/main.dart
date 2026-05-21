@@ -13,11 +13,6 @@ import 'detection_parser.dart';
 
 late List<CameraDescription> _cameras;
 
-/// In `flutter test`, call before `pumpWidget` so the camera plugin is not required.
-void debugSetCamerasForTest(List<CameraDescription> cameras) {
-  _cameras = cameras;
-}
-
 const _modelAssetName = 'best_float32.tflite';
 const _labelsAssetName = 'labels.txt';
 
