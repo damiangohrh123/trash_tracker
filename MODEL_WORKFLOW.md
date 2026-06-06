@@ -32,4 +32,4 @@ Current model contract:
 - Row format: `x1, y1, x2, y2, confidence, class_id` (normalized xyxy)
 - Confidence threshold: `0.25` (see `lib/detection_parser.dart`)
 
-Next planned feature: pause camera preview and render bounding boxes on captured image.
+The app pauses the camera preview after capture and renders bounding boxes on the captured image. Tap **Scan again** to resume live preview.
