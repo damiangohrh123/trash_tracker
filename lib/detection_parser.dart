@@ -1,8 +1,17 @@
 import 'dart:math' show max, min;
 
-const double confidenceThreshold = 0.30;
+/// Minimum score to read a row from model output (Phase 4 val optimum ~0.27).
+const double candidateConfidenceThreshold = 0.25;
+
+/// Minimum score to treat a detection as a confident result in the banner.
+const double confirmedConfidenceThreshold = 0.50;
+
 const double nmsIouThreshold = 0.45;
 const int maxDisplayedDetections = 20;
+
+/// Large, low-confidence boxes are usually background objects (screens, desks).
+const double largeBoxAreaRatio = 0.22;
+const double largeBoxConfidenceCap = 0.50;
 
 /// Parses Ultralytics YOLO TFLite output shaped `[1, N, 6]`.
 /// Each row is: x1, y1, x2, y2, confidence, classId (normalized xyxy).
@@ -24,7 +33,7 @@ List<Detection> parseDetections(dynamic output, List<String> labels) {
     final confidence = _asDouble(row[4]);
     final classId = _asDouble(row[5]).round();
 
-    if (confidence < confidenceThreshold) continue;
+    if (confidence < candidateConfidenceThreshold) continue;
     if (x2 <= x1 || y2 <= y1) continue;
     if (classId < 0 || classId >= labels.length) continue;
 
@@ -48,6 +57,10 @@ List<Detection> parseDetections(dynamic output, List<String> labels) {
   return deduped;
 }
 
+List<Detection> filterSceneFalsePositives(List<Detection> detections) {
+  return detections.where((detection) => !detection.isSuspiciousSceneMatch).toList();
+}
+
 List<Detection> mapDetectionsToOriginalImage(
   List<Detection> detections,
   LetterboxMapping mapping,
@@ -59,14 +72,20 @@ List<Detection> mapDetectionsToOriginalImage(
 }
 
 DetectionSummary summarizeDetections(List<Detection> detections) {
-  if (detections.isEmpty) {
+  final filtered = filterSceneFalsePositives(detections);
+  final confirmed = filtered.where((detection) => detection.isConfirmed).toList();
+
+  if (confirmed.isEmpty) {
+    if (filtered.isNotEmpty) {
+      return DetectionSummary.uncertain(filtered.length);
+    }
     return const DetectionSummary.empty();
   }
 
   final classCounts = <String, int>{};
   final topConfidenceByLabel = <String, double>{};
 
-  for (final detection in detections) {
+  for (final detection in confirmed) {
     classCounts.update(detection.label, (count) => count + 1, ifAbsent: () => 1);
     final existing = topConfidenceByLabel[detection.label];
     if (existing == null || detection.confidence > existing) {
@@ -74,13 +93,15 @@ DetectionSummary summarizeDetections(List<Detection> detections) {
     }
   }
 
-  final top = detections.first;
+  final top = confirmed.first;
   return DetectionSummary(
+    kind: SummaryKind.detected,
     topLabel: top.label,
     topConfidence: top.confidence,
-    detectionCount: detections.length,
+    detectionCount: confirmed.length,
     classCounts: classCounts,
     topConfidenceByLabel: topConfidenceByLabel,
+    uncertainCount: filtered.length - confirmed.length,
   );
 }
 
@@ -159,6 +180,13 @@ class Detection {
 
   bool get isValid => x2 > x1 && y2 > y1;
 
+  double get areaRatio => (x2 - x1) * (y2 - y1);
+
+  bool get isConfirmed => confidence >= confirmedConfidenceThreshold;
+
+  bool get isSuspiciousSceneMatch =>
+      areaRatio >= largeBoxAreaRatio && confidence < largeBoxConfidenceCap;
+
   Detection mapToOriginalImage(LetterboxMapping mapping) {
     double toOriginalX(double normalizedX) {
       final pixel = normalizedX * mapping.inputWidth;
@@ -183,36 +211,57 @@ class Detection {
   }
 }
 
+enum SummaryKind { empty, uncertain, detected }
+
 class DetectionSummary {
   const DetectionSummary({
+    required this.kind,
     required this.topLabel,
     required this.topConfidence,
     required this.detectionCount,
     required this.classCounts,
     required this.topConfidenceByLabel,
+    this.uncertainCount = 0,
   });
 
   const DetectionSummary.empty()
-      : topLabel = null,
+      : kind = SummaryKind.empty,
+        topLabel = null,
         topConfidence = 0,
         detectionCount = 0,
         classCounts = const {},
-        topConfidenceByLabel = const {};
+        topConfidenceByLabel = const {},
+        uncertainCount = 0;
 
+  DetectionSummary.uncertain(int weakDetectionCount)
+      : kind = SummaryKind.uncertain,
+        topLabel = null,
+        topConfidence = 0,
+        detectionCount = 0,
+        classCounts = const {},
+        topConfidenceByLabel = const {},
+        uncertainCount = weakDetectionCount;
+
+  final SummaryKind kind;
   final String? topLabel;
   final double topConfidence;
   final int detectionCount;
   final Map<String, int> classCounts;
   final Map<String, double> topConfidenceByLabel;
+  final int uncertainCount;
 
   bool get hasDetections => detectionCount > 0;
 
   String toDisplayText() {
-    if (!hasDetections || topLabel == null) {
-      return 'No trash detected.\nPoint the camera at waste items.';
+    if (kind == SummaryKind.empty) {
+      return 'No trash detected.\nFill the frame with waste items.';
     }
 
-    if (detectionCount == 1) {
+    if (kind == SummaryKind.uncertain) {
+      return 'Nothing confirmed.\nMove closer to individual waste items.';
+    }
+
+    if (detectionCount == 1 && topLabel != null) {
       final percent = (topConfidence * 100).toStringAsFixed(1);
       return '$topLabel ($percent%)';
     }
@@ -229,6 +278,10 @@ class DetectionSummary {
       return '$label ($percent%)';
     }).join(' · ');
 
-    return '$detectionCount items detected\n$breakdown';
+    final header = '$detectionCount items detected';
+    if (uncertainCount > 0) {
+      return '$header\n$breakdown\n+$uncertainCount low-confidence';
+    }
+    return '$header\n$breakdown';
   }
 }

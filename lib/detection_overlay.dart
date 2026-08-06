@@ -9,10 +9,15 @@ class DetectionOverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final boxPaint = Paint()
+    final confirmedPaint = Paint()
       ..color = Colors.greenAccent
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
+
+    final uncertainPaint = Paint()
+      ..color = Colors.amberAccent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
     final fillPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.65);
@@ -25,10 +30,13 @@ class DetectionOverlayPainter extends CustomPainter {
         detection.y2 * size.height,
       );
 
+      final boxPaint =
+          detection.isConfirmed ? confirmedPaint : uncertainPaint;
       canvas.drawRect(rect, boxPaint);
 
+      final labelPrefix = detection.isConfirmed ? '' : '? ';
       final label =
-          '${detection.label} ${(detection.confidence * 100).toStringAsFixed(0)}%';
+          '$labelPrefix${detection.label} ${(detection.confidence * 100).toStringAsFixed(0)}%';
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,

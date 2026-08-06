@@ -161,8 +161,10 @@ class _CameraScreenState extends State<CameraScreen> {
         inputHeight: letterbox.params.inputHeight,
       );
       final modelDetections = parseDetections(output, _labels);
-      final detections = mapDetectionsToOriginalImage(modelDetections, mapping);
-      final summary = summarizeDetections(detections);
+      final mappedDetections =
+          mapDetectionsToOriginalImage(modelDetections, mapping);
+      final detections = filterSceneFalsePositives(mappedDetections);
+      final summary = summarizeDetections(mappedDetections);
 
       await _controller!.pausePreview();
 
