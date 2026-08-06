@@ -2,178 +2,211 @@
 
 ## 1. Introduction
 
-Recycling is one of the best ways to help the environment, but it is actually a lot harder than most people think. Many people want to recycle their trash correctly, but they often get confused by all the different rules for materials like glass, plastic, and paper. This leads to a lot of mistakes where people throw the wrong things in the recycling bin, which can actually ruin the whole batch of recycling. Right now, there are not many easy tools that help a normal person know exactly what they are holding and where it should go while they are standing in front of a trash can.
+Recycling helps the environment, but it is harder than it seems. Many people want to recycle correctly, but the rules for materials like glass, plastic, and paper are confusing. Simple mistakes, like putting the wrong item in the bin, can ruin an entire batch of recycling. There are not many easy tools that tell someone exactly what they are holding and where it should go.
 
-The goal of this project is to build a mobile app that solves this problem using artificial intelligence. I am developing a system that can look at an object through a phone camera and instantly tell the user what category it belongs to. The model is trained to recognize six main types of waste: biodegradable, cardboard, glass, metal, paper, and plastic. By putting this technology on a smartphone, I want to make it easy for anyone to get a fast and accurate answer about their trash.
+This project builds a mobile app to solve that problem using artificial intelligence. The app looks at an object through the phone's camera and tells the user its category right away. The model recognizes six types of waste: biodegradable, cardboard, glass, metal, paper, and plastic.
 
-One of the most important parts of this project is making sure the AI works directly on the phone. I do not want the app to send data to the cloud or need a fast internet connection to work. This means the model runs locally on the device making the app much faster and keeps the user's data private. The main challenge is to keep the model small enough for a phone but smart enough to get the classification right every time.
+The app must work directly on the phone. It should not need to send data to the cloud or rely on a fast internet connection. Running the model locally keeps the app fast and keeps the user's data private. The main challenge is keeping the model small enough for a phone, but accurate enough to classify trash correctly.
 
 ## 2. System Architecture
-The project is split into two main parts: the machine learning model and the mobile application. For the brain of the app, I am using a type of artificial intelligence called YOLO, which stands for You Only Look Once. I chose the Nano version of this model because it is designed to be very lightweight. This is important because a normal phone does not have the same power as a big computer, so the model needs to be small to run smoothly without lagging. To get the model ready, I used a high-performance computer with an NVIDIA RTX 5080 GPU to run the training process. This allowed me to test different settings quickly. Once the training is finished and the model is accurate enough, I will convert it into TFLite format. This format is specifically made for mobile devices and helps the model run efficiently on a phone's processor.
 
-The second part of the project is the mobile app itself, which I am building using Flutter. Flutter is a framework that lets the app run on both Android and iOS. The app will use the phone's camera to see the trash and then use the TFLite model to figure out what it is. Everything happens locally on the phone, so the user just has to point their camera at a piece of trash to see the classification pop up on the screen in real time.
+The project has two main parts: the machine learning model and the mobile app.
 
-## 3 Model Training
+For the model, I use YOLO (You Only Look Once), an object detection architecture. I started with the smallest version because it is lightweight and phones have limited processing power. In Phase 5, I moved to a larger version in the same family. This gives the model more capacity to tell similar materials apart, while still staying small enough to run on a phone. Training runs on a computer with an NVIDIA RTX 5080 GPU, which makes it possible to test different settings quickly. Once training is done, the model is converted to TFLite format, which is built for running efficiently on mobile devices.
+
+The app itself is built with Flutter, so it runs on both Android and iOS. The app uses the phone's camera to capture an image, then the TFLite model classifies it. Everything runs locally, so the user only needs to point the camera at an item to see its category.
+
+## 3. Model Training
+
 ### 3.1 Phase 1: Baseline Training and Results
-The first step of the project was to run an initial training session to see how well a small model could handle the garbage dataset. I used a dataset of about 10,000 images that were divided into seven categories. For the hardware, I used an NVIDIA RTX 5080 GPU, which made the training much faster. I ran the process for 100 epochs, which took about four hours to complete. This gave me a baseline model that I could use to measure progress in the future.
 
-After the training, the model gave me several metrics to show how it performed. One of them is called mAP50, which stands for mean Average Precision. The model got a score of 0.60 (or 60%). This means that in this first phase, the model is correct about 60% of the time when it identifies an object. For precision and recall for each category, Glass had a high precision of 88%, meaning when the model says something is glass, it is usually right. However, Paper had a very low score of only 15%. This happened because the dataset was not balanced. There were over 13,000 instances of biodegradable waste but only 33 instances of paper. Because of this, the model "biased" its guesses toward the bigger categories since it saw them so much more often during training.
+The first step was an initial training run to see how a small model would handle the dataset. This used about 10,000 images across seven categories, trained for 100 epochs over roughly four hours. This gave a baseline model to measure future progress against.
+
+The model's mAP50 (mean Average Precision) score was 0.60, meaning it identified objects correctly about 60% of the time. Results varied a lot by category. Glass had 88% precision, so when the model predicted glass, it was usually right. Paper had only 15% precision. The cause was an imbalanced dataset: over 13,000 biodegradable instances versus just 33 for paper. With so few paper examples, the model became biased toward the categories it saw most often.
 
 <div align="center">
     <img src="document_images/phase1_metrics.png" width="600">
-    <p align="center"><strong>Fig. 1. </strong>Breakdown of precision, recall, and mAP scores across the seven garbage categories for phase 1.<p>
+    <p align="center"><strong>Fig. 1. </strong>Precision, recall, and mAP scores for the seven categories in Phase 1, showing Glass's 88% precision against Paper's 15%.<p>
 </div>
 
-To see exactly how the model was thinking, I ran it on some test images. The results were saved in a folder called predict. In this folder, the model takes the original images and draws bounding boxes over what it finds. Each box has a label and a "confidence score" showing how sure the model is. In one test, the model looked at a clear glass bottle but labeled it as PLASTIC 0.80. Because clear glass and clear plastic look very similar, the model got confused. This shows it needs more varied examples of glass in the next phase.
+Running the model on test images showed how it was thinking. Each prediction draws a box with a label and a confidence score. In one case, a clear glass bottle was labeled PLASTIC at 80% confidence — glass and plastic look alike when both are clear, so the model needs more varied glass examples.
 
 <div align="center">
     <img src="document_images/phase1_glass.jpg" width="300">
-    <p align="center"><strong>Fig. 2. </strong>An example of model confusion where a clear glass object was incorrectly identified as plastic with an 80% confidence score.<p>
+    <p align="center"><strong>Fig. 2. </strong>A clear glass object misidentified as plastic with 80% confidence.<p>
 </div>
 
-On images like the tomatoes and the cardboard box, the model drew way too many boxes. It found the object correctly, but it created extra boxes for different parts of the same item. This makes the screen look messy and confusing for a user.
+On images like the tomatoes and cardboard box, the model drew far too many boxes. It found the object, but split it into several overlapping boxes, which would look messy on screen.
 
 <div align="center">
     <img src="document_images/phase1_tomatoes.jpg" width="300">
-    <p align="center"><strong>Fig. 3. </strong>The model generates multiple overlapping bounding boxes for individual items, such as these tomatoes, creating a cluttered output.<p>
+    <p align="center"><strong>Fig. 3. </strong>Multiple overlapping boxes on a single set of tomatoes.<p>
 </div>
 
 <div align="center">
     <img src="document_images/phase1_cardboard.jpg" width="300">
-    <p align="center"><strong>Fig. 4. </strong>Duplicate "Cardboard" detections on a single box.<p>
+    <p align="center"><strong>Fig. 4. </strong>Duplicate boxes on one cardboard item.<p>
 </div>
 
-In another case, a cardboard bar box was labeled as PAPER 0.86. This is likely because cardboard and paper have similar textures, and since the model has very few examples of paper, it is struggling to tell the two apart correctly.
+A cardboard box was also labeled PAPER at 86% confidence, likely because cardboard and paper share a similar texture, and the model has too few paper examples to tell them apart.
 
 <div align="center">
     <img src="document_images/phase1_cardboard2.jpg" width="300">
-    <p align="center"><strong>Fig. 5. </strong>A cardboard box incorrectly labeled as "Paper" with 86% confidence, likely due to visual similarities and a small paper dataset.<p>
+    <p align="center"><strong>Fig. 5. </strong>A cardboard box labeled Paper at 86% confidence.<p>
 </div>
 
-Even with the accuracy issues in some categories, the model proved that it is fast enough for a phone. On my computer, it only took about 1.3 milliseconds to process a single image. This is a very good sign because it means that even on a slower phone processor, the app should still be able to show results in real time without any lag.
+Despite the accuracy issues, speed was promising: processing one image took about 1.3 milliseconds. Even a slower phone processor should keep up in real time.
 
 ### 3.2 Phase 2: Data Augmentation and Model Optimization
-After analyzing the failures in Phase 1, specifically the severe bias against the "Paper" category and the cluttered multi-box detections, Phase 2 had focus on data engineering. The goal was not just to train longer, but to provide the model with a more balanced and diverse set of images. To solve the data scarcity for paper and the lack of variety in other categories, a 3x Augmentation strategy was applied via Roboflow. This expanded the dataset from 10,000 images to over 25,000 images. By applying random rotations, flips, and brightness adjustments, the model was forced to learn the "features" of the trash rather than just memorizing specific photos. Additionally, the dataset was rebalanced. In Phase 1, the model was overwhelmed by over 13,000 instances of "Biodegradable" items. In Phase 2, the training split was adjusted to ensure the model saw "Paper" and "Plastic" more frequently during each epoch. Training was again performed on the NVIDIA RTX 5080. Despite the dataset size increasing by 150%, the 5080's high VRAM allowed for an optimized training run of 100 epochs, completing in approximately 9.5 hours. The results of the training showed that while the overall accuracy (mAP50) remained stable at 0.60, the model became significantly more robust.
+
+Phase 1 showed two clear problems: bias against Paper, and cluttered multi-box detections. Phase 2 focused on the data itself rather than just training longer. A 3x augmentation strategy in Roboflow expanded the dataset from 10,000 to over 25,000 images, using random rotations, flips, and brightness changes so the model would learn general features instead of memorizing specific photos. The dataset was also rebalanced so Paper and Plastic appeared more often during training, instead of being overwhelmed by the 13,000+ Biodegradable instances from Phase 1. Training ran for 100 epochs over about 9.5 hours. The overall mAP50 stayed at 0.60, but the model became noticeably more robust.
 
 <div align="center">
     <img src="document_images/phase2_metrics.png" width="600">
-    <p align="center"><strong>Fig. 6. </strong>Breakdown of precision, recall, and mAP scores across the seven garbage categories for phase 2.<p>
+    <p align="center"><strong>Fig. 6. </strong>Precision, recall, and mAP scores for the seven categories in Phase 2.<p>
 </div>
 
-While the global mAP50 remained stable at 0.60, the internal diagnostics show a much more details about the model.
+The overall score stayed the same, but a closer look at the diagnostics tells a more detailed story.
 
 <div align="center">
     <img src="document_images/phase2_confusion_matrix_normalized.png" width="600">
-    <p align="center"><strong>Fig. 7. </strong>Normalized Confusion Matrix for Phase 2, highlighting the 73% background-miss rate for Paper.<p>
+    <p align="center"><strong>Fig. 7. </strong>Normalized confusion matrix for Phase 2, showing a 73% background-miss rate for Paper.<p>
 </div>
 
-The Normalized Confusion Matrix (Fig. 7) identifies the core bottleneck. The model has achieved solid reliability in Glass (78%) and Biodegradable (61%). However, 73% of Paper instances are being misclassified as "Background." This indicates that the model is failing to propose a region of interest for paper altogether, likely due to a lack of unique feature variety in the small Paper sample size (33 instances). Additionally, there is a notable 16% confusion rate where Plastic is incorrectly identified as Metal, suggesting a need for more distinct specular-highlight examples in Phase 3.
+The confusion matrix shows the core problem. Glass (78%) and Biodegradable (61%) are fairly reliable, but 73% of Paper instances are missed as background entirely — the model isn't even proposing a box for them, likely because there are only 33 paper examples. Plastic is also confused with Metal 16% of the time, suggesting the model needs clearer examples of shiny, reflective surfaces.
 
 <div align="center">
     <img src="document_images/phase2_BoxF1_curve.png" width="600">
-    <p align="center"><strong>Fig. 8. </strong>F1-Confidence Curve showing the optimal operating threshold of 0.259.<p>
+    <p align="center"><strong>Fig. 8. </strong>F1-confidence curve showing an optimal threshold of 0.259.<p>
 </div>
 
-The BoxF1-Curve (Fig. 8) reveals that the optimal balance between Precision and Recall occurs at a 0.259 confidence threshold. This data is critical for the upcoming mobile application development, as it provides the specific threshold needed to filter out "ghost" detections while maintaining a high capture rate for valid trash items.
+The F1 curve shows the best balance of precision and recall sits at a 0.259 confidence threshold. This number matters for the app later, since it sets the cutoff for filtering out false detections while still catching real items.
 
-The visual outputs from the Phase 2 validation runs demonstrate a significant "cleanup" of the detection logic compared to Phase 1.
+Validation images show a real cleanup in detection logic compared to Phase 1.
 
 <div align="center">
     <img src="document_images/phase2_val_batch1_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 9. </strong>Successful multi-object isolation of metal cans using YOLO26 NMS-Free detection.<p>
+    <p align="center"><strong>Fig. 9. </strong>Metal cans correctly separated into individual boxes.<p>
 </div>
 
-As shown in Fig. 9, the model is now better at isolating individual items within dense clusters. Even with overlapping aluminum cans, the YOLO26 architecture produces distinct, single bounding boxes. This is a direct improvement over Phase 1, proving that the NMS-Free training effectively suppressed duplicate detections. Although, some duplication still seem to be present.
+The model is now better at separating individual items in a cluster. Overlapping cans get distinct boxes instead of duplicates, a clear improvement over Phase 1 — though some duplication still shows up elsewhere.
 
 <div align="center">
     <img src="document_images/phase2_val_batch2_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 10. </strong>Extreme over-detection in the Biodegradable class, where individual items are fragmented into dozens of overlapping predictions.<p>
+    <p align="center"><strong>Fig. 10. </strong>Severe over-detection on a pile of biodegradable items, split into dozens of overlapping boxes.<p>
 </div>
 
-While Phase 2 successfully increased overall robustness, specific images in the Biodegradable category (see Fig. 10) revealed a significant issue with spatial over-detection. In scenarios featuring large piles of fruit or organic matter, the model attempts to generate a bounding box for every recognizable edge or texture change, resulting in a "visual explosion" of overlapping detections. This creates a significant dilemma: while the system must maintain "Individual Logic" to distinguish and count two side-by-side apples as distinct objects, it must also adopt a "Collective Logic" when those items form a massive, undifferentiated pile. In the latter case, a single "Biodegradable" bounding box is preferred to maintain clarity and prevent the screen from becoming obscured by redundant data.
+Phase 2 also revealed a limitation that would resurface in later phases: over-detection on piles of organic matter. When items form a large, messy pile, the model tries to draw a box around every edge and texture change, creating a cluttered "explosion" of overlapping boxes. This creates a real tradeoff. Two apples sitting side by side should get two separate boxes, but a large, indistinguishable pile is better shown as one single box. Solving this means teaching the model when to treat items individually versus as a group.
 
-To resolve this granularity conflict in Phase 3 without sacrificing the system's ability to count individual items, a two-pronged strategic approach will be implemented. First, a Labeling Refinement protocol will be introduced in the next data iteration to teach the model to recognize "Piles" as their own entity; large, amorphous clusters of waste will be annotated with a single encompassing bounding box, while distinct, separated items will remain individually labeled. Second, the system will utilize IoU (Intersection over Union) Threshold Tuning within the application code. By implementing a more aggressive IoU threshold (e.g., merging boxes with an overlap greater than 45%), the model can be forced to consolidate highly redundant detections into a single clean box while still allowing side-by-side items with minimal overlap to be identified as unique instances.
+The plan for Phase 3 has two parts. First, relabel large piles as a single object during annotation, instead of labeling every visible piece. Second, tune the IoU (Intersection over Union) threshold in the app so that boxes overlapping more than about 45% get merged into one, while separate side-by-side items stay distinct.
 
 ### 3.3 Phase 3: Dataset Rebalancing and Training Extension
-Phase 3 was designed to address the high background-miss rate for Paper and the bias for Biodegradable identified in Phase 2 through class rebalancing. This was achieved by introducing over 8,000 new "Paper" instances and cleaning the "Biodegradable" class of redundant ground-truth annotations. To ensure these features were deeply integrated into the model’s weights, the training duration was extended to 150 epochs with a batch size of 32. The global mAP50 reached 0.613, representing a successful stabilization of the model despite the increased complexity of the dataset.
+
+Phase 3 targeted the Paper background-miss problem and the Biodegradable bias through rebalancing: over 8,000 new Paper instances were added, and redundant Biodegradable annotations were cleaned up. Training extended to 150 epochs with a batch size of 32 so the model could fully absorb the new data. The mAP50 reached 0.613, a stable result despite the added complexity.
 
 <div align="center">
     <img src="document_images/phase3_metrics.png" width="600">
-    <p align="center"><strong>Fig. 11. </strong>Breakdown of precision, recall, and mAP scores across the seven garbage categories for phase 3.<p>
+    <p align="center"><strong>Fig. 11. </strong>Precision, recall, and mAP scores for the seven categories in Phase 3.<p>
 </div>
 
-The Confusion Matrix (Fig. 12) demonstrates a breakthrough in the Paper category. While Phase 2 saw a 73% background-miss rate, the Phase 3 model now successfully proposes regions for paper but frequently misclassifies them as Biodegradable (61%). This might be due to the dataset's imbalance, with 7,490 Biodegradable instances vs only 31 Paper instances in the validation set, the model has developed a probabilistic bias toward the majority class for light-colored, matte textures.
+The confusion matrix shows a breakthrough for Paper: the 73% background-miss rate from Phase 2 is gone, since the model now proposes a box for paper items. But 61% of those get misclassified as Biodegradable instead, likely because the validation set still has 7,490 Biodegradable instances against only 31 for Paper — the model leans toward the majority class for light, matte textures.
 
 <div align="center">
     <img src="document_images/phase3_confusion_matrix_normalized.png" width="600">
-    <p align="center"><strong>Fig. 12. </strong>High reliability is maintained in Glass (76%) and Metal (67%). However, the matrix reveals "Identity Confusion" for the Paper category. While background misses decreased, 61% of Paper instances are now misclassified as Biodegradable.<p>
+    <p align="center"><strong>Fig. 12. </strong>Glass (76%) and Metal (67%) stay reliable, but 61% of Paper instances are now confused with Biodegradable instead of missed entirely.<p>
 </div>
 
-The F1-Confidence Curve (Fig. 13) confirms that the model's optimal operating point has shifted to 0.295. This indicates that the Phase 3 model is more certain of its detections, allowing for a higher confidence cutoff. This shift will result in fewer false positives during real-time tracking without sacrificing detection accuracy.
+The F1 curve shows the optimal threshold shifted up to 0.295, meaning the model is more confident in its detections. A higher cutoff means fewer false positives without losing accuracy.
 
 <div align="center">
     <img src="document_images/phase3_BoxF1_curve.png" width="600">
-    <p align="center"><strong>Fig. 13. </strong>The optimal operating threshold has shifted to 0.295 with a peak F1 score of 0.61.<p>
+    <p align="center"><strong>Fig. 13. </strong>Optimal threshold shifted to 0.295, with a peak F1 score of 0.61.<p>
 </div>
 
-Visual analysis of the Phase 3 validation batches (Fig. 14, Fig 15, Fig, 16) reveals a significant improvement in Spatial Logic. The model is now much better at isolating individual items in dense piles without the huge amounts of overlapping bounding boxes seen in previous iterations. However, a persistent label bias remains where items labeled as CARDBOARD in the ground truth are consistently relabeled as BIODEGRADABLE in predictions.
+Validation images show real improvement in spatial logic — items in dense piles are isolated much better than in earlier phases, though the over-detection issue from Phase 2 is still present in some clusters, just less severe. A new label bias also appears: ground-truth Cardboard items are often predicted as Biodegradable.
 
 <div align="center">
     <img src="document_images/phase3_val_batch0_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 14. </strong>The model demonstrates exceptional feature extraction for metallic textures and cylindrical shapes, achieving confidence scores between 0.8 and 1.0 across various lighting conditions and orientations.<p>
+    <p align="center"><strong>Fig. 14. </strong>Strong feature extraction on metallic, cylindrical shapes, with confidence scores between 0.8 and 1.0.<p>
 </div>
 
 <div align="center">
     <img src="document_images/phase3_val_batch1_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 15. </strong>While spatial isolation of organic items has improved, this batch highlights a persistent label bias where "Cardboard" ground-truth labels are incorrectly predicted as "Biodegradable" by the model.<p>
+    <p align="center"><strong>Fig. 15. </strong>A Cardboard item incorrectly predicted as Biodegradable.<p>
 </div>
 
 <div align="center">
     <img src="document_images/phase3_val_batch2_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 16. </strong>The model successfully identifies individual components within dense organic piles. However, overlapping bounding boxes remain present in complex textures, suggesting a need for more aggressive NMS (Non-Maximum Suppression) tuning in the application layer.<p>
+    <p align="center"><strong>Fig. 16. </strong>Organic piles mostly separated into individual items, though some overlapping boxes remain.<p>
 </div>
 
-Phase 3 successfully transitioned the model into a robust, high-performance system, achieving a 0.613 mAP50. The primary breakthrough was the resolution of the "Paper" category’s background-miss rate, suppressing redundant huge amounts of bounding boxes in organic clusters to prioritize individual object counts. Despite these improvements, a persistent "Identity Confusion" remains between light-colored processed materials and high-volume organic matter, driven by a significant probabilistic bias toward the Biodegradable class (7,490 vs. 31 instances). Phase 4 will pivot from raw data volume toward integrating null negative samples. 
+Phase 3 reached 0.613 mAP50, with Paper's background-miss problem resolved. The main remaining issue is confusion between light-colored processed materials and organic matter, driven by the Biodegradable-to-Paper instance imbalance. Phase 4 will shift focus from adding more data to adding negative (no-object) examples.
 
 ### 3.4 Phase 4: Precision Engineering and Background Calibration
-Phase 4 emphasized technical refinements to stop false detections and fix the misidentification between processed materials and organic matter. This involved adding 800 "Null" negative examples to tune the background and increasing training resolution to 800px to better distinguish surface textures. Additionally, applying texture-sensitive Adaptive Equalization sharpening helped the system fix ongoing errors with pale objects on pale backgrounds. These structural changes boosted the global mAP50 to 0.6888, marking a notable 12.4% relative gain over Phase 3.
+
+Phase 4 focused on stopping false detections and fixing the mix-up between processed materials and organic matter. This meant adding 800 negative (no-object) examples to calibrate the background, raising the training resolution to 800px for finer texture detail, and applying adaptive equalization to fix errors with pale objects on pale backgrounds. Together these changes raised mAP50 to 0.689, a 12.4% gain over Phase 3.
 
 <div align="center">
     <img src="document_images/phase4_metrics.png" width="600">
-    <p align="center"><strong>Fig. 17. </strong>Phase 4 performance breakdown shows a massive stabilization of the Paper category (0.758 mAP50) and consistent high performance in Glass (0.819 mAP50).<p>
+    <p align="center"><strong>Fig. 17. </strong>Paper stabilizes at 0.758 mAP50; Glass stays strong at 0.819.<p>
 </div>
 
-The Normalized Confusion Matrix (Fig. 18) confirms the success of the background calibration. False positives on empty surfaces (Background misses) have been significantly reduced across all categories, specifically for Paper, which now has a 74% true positive rate. While some "Identity Confusion" persists, specifically with 61% of Biodegradable items being misclassified as Background, this is a trade-off that ensures the model remains "silent" until actual waste is clearly identified, drastically improving real-world usability.
+The confusion matrix confirms the background calibration worked. False positives on empty surfaces dropped across every category, and Paper now has a 74% true positive rate. One tradeoff remains: 61% of Biodegradable items are now misclassified as background instead of detected. This makes the model more conservative — it stays quiet until an item is clearly visible, which is better for real-world use even though it means missing some true positives.
 
 <div align="center">
     <img src="document_images/phase4_confusion_matrix_normalized.png" width="600">
-    <p align="center"><strong>Fig. 18. </strong>The confusion matrix highlights a breakthrough in precision. The model is now much more conservative, preferring to miss a vague organic shape rather than propose a false detection on a clean floor.<p>
+    <p align="center"><strong>Fig. 18. </strong>The model is now more conservative, preferring to miss a vague shape over falsely flagging a clean surface.<p>
 </div>
 
-The F1-Confidence Curve (Fig. 19) shows the optimal operating threshold has shifted to 0.272 with a peak F1 score of 0.67. The curve for Paper (purple) is notably higher and broader than in previous phases, indicating the model is now highly confident in identifying processed textures even at varying confidence levels.
+The F1 curve's optimal threshold shifted to 0.272, with a peak score of 0.67. Paper's curve is now noticeably higher and broader than before, showing the model recognizes processed textures confidently across a wider range of thresholds.
 
 <div align="center">
     <img src="document_images/phase4_BoxF1_curve.png" width="600">
-    <p align="center"><strong>Fig. 19. </strong>Every category now peaks higher on the F1 scale, with the overall average hitting 0.67, representing a more stable and dependable recognition framework.<p>
+    <p align="center"><strong>Fig. 19. </strong>Every category peaks higher on the F1 scale, averaging 0.67 overall.<p>
 </div>
 
-Visual analysis of Phase 4 validation batches (Fig. 20, Fig. 21, Fig. 22) demonstrates the impact of the 800px resolution scaling. In plastic-heavy samples (Fig. 20), the model successfully isolates individual crinkled textures and transparent layers with confidence scores frequently reaching 0.9 to 1.0. Crucially, the Negative Sample integration is validated in the environment batches (Fig. 21), where complex backgrounds yield zero false positives. However, analysis of dense organic clusters (Fig. 22) reveals that the model still suffers from a "bounding box explosion." Despite the higher accuracy, the model generates excessive overlapping predictions for single items within a pile, indicating that the NMS (Non-Maximum Suppression) or the model's clustering logic requires further tuning to prioritize individual object counts.
+Validation images show the benefit of the higher resolution: plastic items with crinkled textures and transparent layers are now isolated with 0.9-1.0 confidence, and the negative examples pay off, with complex backgrounds producing zero false positives. The over-detection issue on dense organic piles is still present at this point and still needs further NMS (Non-Maximum Suppression) tuning.
 
 <div align="center">
     <img src="document_images/phase4_val_batch0_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 20. </strong>High-resolution scaling enables the detection of clear and stacked plastic objects with great certainty, maintaining spatial logic even in messy environments.<p>
+    <p align="center"><strong>Fig. 20. </strong>Clear and stacked plastic items detected with high confidence, even in a messy scene.<p>
 </div>
 
 <div align="center">
     <img src="document_images/phase4_val_batch1_pred.jpg" width="500">
-    <p align="center"><strong>Fig. 21. </strong>Background calibration results: The model correctly ignores complex non-waste environments, a critical requirement for a stable mobile deployment.<p>
+    <p align="center"><strong>Fig. 21. </strong>Complex non-waste backgrounds correctly produce no detections.<p>
 </div>
 
 <div align="center">
     <img src="document_images/phase4_biodegradable.jpg" width="500">
-    <p align="center"><strong>Fig. 22. </strong>While the model successfully extracts features in dense organic clusters, it continues to suffer from redundant bounding boxes. Multiple overlapping predictions are visible for single items, suggesting a persistent challenge in spatial deduplication within the "Biodegradable" class.<p>
+    <p align="center"><strong>Fig. 22. </strong>Organic piles still generate multiple overlapping boxes for single items.<p>
 </div>
 
-Phase 4 successfully transformed the system into a deployment-ready model, achieving a 0.6888 mAP50. The primary achievement was the elimination of "ghost" boxes and the refinement of the Paper class. While the redundancy in bounding boxes for organic piles remains a visual hurdle, the current metrics provide a high-sensitivity foundation. The model is now prepared for final export and integration into the Trash Tracker Flutter application.
+Phase 4 reached 0.689 mAP50 and removed most ghost detections, with Paper now performing reliably. Overlapping boxes on organic piles remain the main visual issue, but the model was considered ready for export into the Flutter app.
+
+### 3.5 Phase 5: Split Diagnosis and Model Capacity Upgrade
+
+Phase 5 started by checking the dataset split instead of the model. Biodegradable, Cardboard, and Glass were barely showing up in the test set — as few as 3-6 images each — even though they were well represented in training. This was fixed by manually moving batches of images from training into the test split in Roboflow, then regenerating the dataset. The test set grew from 220 to 370 images, using the same preprocessing and augmentation as Phase 4 (auto-orient, horizontal flip, ±15° rotation, ±25% brightness, up to 2.5px blur).
+
+<div align="center">
+    <img src="document_images/phase5_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 23. </strong>With a balanced test split, Biodegradable reaches 82% accuracy. Glass and Metal are still confused with each other, and Plastic has the highest false-positive rate of any class.<p>
+</div>
+
+Retraining on the fixed split gave an overall mAP50 of 0.699. Glass was the strongest class at 0.849, while Plastic was the weakest at 0.536, despite having the most training examples of any category. The precision-recall curve confirms this is a real problem, not just a threshold issue: Plastic's curve stays below every other class across the board.
+
+<div align="center">
+    <img src="document_images/phase5_BoxPR_curve.png" width="600">
+    <p align="center"><strong>Fig. 24. </strong>Glass leads the precision-recall curve; Plastic falls behind at every threshold.<p>
+</div>
+
+Checking the validation images explained the two main confusions. A glass measuring cup was predicted as Metal, likely due to its shiny, reflective surface. A frosted plastic bottle was predicted as Glass, since frosted plastic and frosted glass look almost the same in a photo. A grey egg carton (true label Cardboard) was also predicted as Metal, likely due to its slightly metallic texture.
+
+<div align="center">
+    <img src="document_images/phase5_val_batch1_pred.jpg" width="500">
+    <p align="center"><strong>Fig. 25. </strong>A glass measuring cup predicted as Metal at 40% confidence.<p>
+</div>
+
+Training curves showed no overfitting, and metrics leveled off around epoch 25-30 before early stopping at epoch 63. Since the model had fully converged, more epochs would not fix the Glass/Metal/Plastic confusion. Phase 5 instead moved to a larger model for the next round, trading a bigger file size for more capacity to tell similar materials apart.
 
 ## References
