@@ -209,4 +209,26 @@ Checking the validation images explained the two main confusions. A glass measur
 
 Training curves showed no overfitting, and metrics leveled off around epoch 25-30 before early stopping at epoch 63. Since the model had fully converged, more epochs would not fix the Glass/Metal/Plastic confusion. Phase 5 instead moved to a larger model for the next round, trading a bigger file size for more capacity to tell similar materials apart.
 
+## 4. Model Workflow and Maintenance
+
+The app ships with two runtime files: `assets/best_float32.tflite` (the trained model) and `assets/labels.txt` (the class names, in the same order the model outputs them).
+
+To retrain, run `train_trash_tracker.ipynb` in the repo root. It downloads the dataset from Roboflow, audits class balance, trains YOLO26 at 800px, validates and tests on `ml_output/test_images/`, and exports a TFLite file to copy into `assets/`. Dataset downloads and training runs are all written to `ml_output/`, so the repo root stays clean.
+
+Setup (one time): run `setup_env.bat` from the repo root to create the `trash_tracker` conda environment and register it as a Jupyter kernel. Each session after that:
+
+```bash
+conda activate trash_tracker
+set ROBOFLOW_API_KEY=your_key_here
+jupyter notebook --notebook-dir="%cd%"
+```
+
+Select the "Python (trash_tracker)" kernel before running cells.
+
+TFLite export only works on Linux x86 or macOS, since Ultralytics moved to the LiteRT export path. It fails on Windows — export through WSL2, a cloud notebook, or the Ultralytics Platform instead.
+
+A few rules keep the runtime model consistent: do not append raw bytes or JSON to `.tflite` files, replace `assets/best_float32.tflite` only with a clean Ultralytics export, keep one active runtime model in `assets/`, and keep `labels.txt`'s class order aligned with the training `data.yaml`.
+
+The app expects a fixed model contract: input `[1, 800, 800, 3]` (float RGB, normalized to `[0, 1]`), output `[1, 300, 6]`, where each row is `x1, y1, x2, y2, confidence, class_id` in normalized xyxy format. Confidence thresholds live in `lib/detection_parser.dart` (`candidateConfidenceThreshold`, `confirmedConfidenceThreshold`). After a scan, the app pauses the camera preview and draws boxes on the captured image; tapping **Scan again** resumes the live preview.
+
 ## References
