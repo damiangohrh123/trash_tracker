@@ -1,0 +1,7 @@
+ultralytics>=8.3.0
+roboflow
+matplotlib
+pyyaml
+pillow
+jupyter
+ipykernel
