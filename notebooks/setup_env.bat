@@ -2,7 +2,7 @@
 REM Sets up (or reuses) ONE dedicated conda environment for trash_tracker training,
 REM and registers it as a clearly-named Jupyter kernel so there's no ambiguity
 REM about which environment/kernel this notebook uses.
-REM Run this from an Anaconda Prompt, from inside the repo folder.
+REM Run this from an Anaconda Prompt, from inside this notebooks/ folder.
 
 echo Checking for existing "trash_tracker" conda environment...
 call conda env list | findstr /C:"trash_tracker" >nul

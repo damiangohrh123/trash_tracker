@@ -213,9 +213,9 @@ Training curves showed no overfitting, and metrics leveled off around epoch 25-3
 
 The app ships with two runtime files: `assets/best_float32.tflite` (the trained model) and `assets/labels.txt` (the class names, in the same order the model outputs them).
 
-To retrain, run `train_trash_tracker.ipynb` in the repo root. It downloads the dataset from Roboflow, audits class balance, trains YOLO26 at 800px, validates and tests on `ml_output/test_images/`, and exports a TFLite file to copy into `assets/`. Dataset downloads and training runs are all written to `ml_output/`, so the repo root stays clean.
+To retrain, run `notebooks/train_trash_tracker.ipynb`. It downloads the dataset from Roboflow, audits class balance, trains YOLO26 at 800px, validates and tests on `ml_output/test_images/`, and exports a TFLite file to copy into `assets/`. Dataset downloads and training runs are all written to `ml_output/` at the repo root, so they stay out of the `notebooks/` folder and out of the repo root's way.
 
-Setup (one time): run `setup_env.bat` from the repo root to create the `trash_tracker` conda environment and register it as a Jupyter kernel. Each session after that:
+Setup (one time): from inside `notebooks/`, run `setup_env.bat` to create the `trash_tracker` conda environment and register it as a Jupyter kernel. Each session after that, from inside `notebooks/`:
 
 ```bash
 conda activate trash_tracker
