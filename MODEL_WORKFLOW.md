@@ -12,8 +12,10 @@ Use `train_trash_tracker.ipynb` (repo root) for a full retrain pipeline:
 1. Configure Roboflow workspace / project / version
 2. Audit class balance and negative images
 3. Train YOLO26 at 800px
-4. Validate and test on `test_images/`
+4. Validate and test on `ml_output/test_images/`
 5. Export TFLite and copy to `assets/`
+
+Note: the notebook switches its working directory to `ml_output/` early on, so the Roboflow dataset download, training runs, and test images all land there instead of cluttering the repo root.
 
 Setup (one-time): run `setup_env.bat` from the repo root to create the `trash_tracker` conda env and register it as a Jupyter kernel. Then, each session:
 
