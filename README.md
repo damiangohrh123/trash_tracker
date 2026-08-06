@@ -27,29 +27,42 @@ mAP50 landed at 0.60, but accuracy varied sharply by class — Glass hit 88% pre
 
 Test images exposed two more issues: look-alike materials confused each other (a clear glass bottle read as PLASTIC at 80% confidence), and dense objects got split into multiple overlapping boxes instead of one. A cardboard box was also read as PAPER at 86% confidence. Inference speed was still strong at 1.3ms per image.
 
+<div align="center">
 <table><tr>
 <td align="center"><img src="ml_output/document_images/phase1_glass.jpg" width="190"><br><sub><strong>Fig. 2.</strong> Glass misread as plastic (80%).</sub></td>
 <td align="center"><img src="ml_output/document_images/phase1_tomatoes.jpg" width="190"><br><sub><strong>Fig. 3.</strong> Overlapping boxes on tomatoes.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase1_cardboard.jpg" width="190"><br><sub><strong>Fig. 4.</strong> Duplicate boxes on cardboard.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase1_cardboard2.jpg" width="190"><br><sub><strong>Fig. 5.</strong> Cardboard read as Paper (86%).</sub></td>
 </tr></table>
+</div>
 
 ### 3.2 Phase 2: Data Augmentation and Model Optimization
 
 Phase 2 targeted the Paper bias and the duplicate-box clutter through the data, not longer training: 3x augmentation (rotation, flips, brightness) grew the dataset from 10,000 to 25,000+ images, and Paper/Plastic were rebalanced against the 13,000+ Biodegradable instances. Trained 100 epochs (~9.5 hours). Overall mAP50 held at 0.60, but the model got noticeably more robust underneath that number.
 
-<table><tr>
-<td align="center"><img src="ml_output/document_images/phase2_metrics.png" width="260"><br><sub><strong>Fig. 6.</strong> Per-class scores, Phase 2.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase2_confusion_matrix_normalized.png" width="260"><br><sub><strong>Fig. 7.</strong> 73% of Paper missed as background.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase2_BoxF1_curve.png" width="260"><br><sub><strong>Fig. 8.</strong> Optimal threshold: 0.259.</sub></td>
-</tr></table>
+<div align="center">
+    <img src="ml_output/document_images/phase2_metrics.png" width="600">
+    <p align="center"><strong>Fig. 6. </strong>Per-class precision, recall, and mAP scores, Phase 2.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase2_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 7. </strong>73% of Paper instances missed as background.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase2_BoxF1_curve.png" width="600">
+    <p align="center"><strong>Fig. 8. </strong>F1-confidence curve, optimal threshold 0.259.<p>
+</div>
 
 The confusion matrix explains why: Glass (78%) and Biodegradable (61%) held up fine, but 73% of Paper instances got no box at all — only 33 examples to learn from — and Plastic was confused with Metal 16% of the time. The F1 curve's best threshold, 0.259, matters later for filtering the app's false detections.
 
+<div align="center">
 <table><tr>
 <td align="center"><img src="ml_output/document_images/phase2_val_batch1_pred.jpg" width="380"><br><sub><strong>Fig. 9.</strong> Metal cans now separated correctly.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase2_val_batch2_pred.jpg" width="380"><br><sub><strong>Fig. 10.</strong> Over-detection on a biodegradable pile.</sub></td>
 </tr></table>
+</div>
 
 Box separation improved (Fig. 9), but dense piles of organic matter still exploded into dozens of overlapping boxes (Fig. 10) — the model draws a box at every texture change instead of treating a pile as one object. The Phase 3 plan: relabel large piles as single objects during annotation, and merge boxes overlapping more than ~45% IoU in the app.
 
@@ -57,19 +70,30 @@ Box separation improved (Fig. 9), but dense piles of organic matter still explod
 
 Phase 3 added 8,000+ new Paper instances and cleaned up redundant Biodegradable annotations, then trained 150 epochs at batch size 32. mAP50 reached 0.613.
 
-<table><tr>
-<td align="center"><img src="ml_output/document_images/phase3_metrics.png" width="260"><br><sub><strong>Fig. 11.</strong> Per-class scores, Phase 3.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase3_confusion_matrix_normalized.png" width="260"><br><sub><strong>Fig. 12.</strong> Paper now confused with Biodegradable (61%).</sub></td>
-<td align="center"><img src="ml_output/document_images/phase3_BoxF1_curve.png" width="260"><br><sub><strong>Fig. 13.</strong> Threshold shifted to 0.295.</sub></td>
-</tr></table>
+<div align="center">
+    <img src="ml_output/document_images/phase3_metrics.png" width="600">
+    <p align="center"><strong>Fig. 11. </strong>Per-class precision, recall, and mAP scores, Phase 3.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase3_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 12. </strong>Paper now confused with Biodegradable (61%) instead of missed entirely.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase3_BoxF1_curve.png" width="600">
+    <p align="center"><strong>Fig. 13. </strong>F1-confidence curve, threshold shifted to 0.295.<p>
+</div>
 
 Paper's 73% background-miss from Phase 2 is gone — the model now proposes a box — but 61% of those get misclassified as Biodegradable, since the validation set still has 7,490 Biodegradable instances against only 31 Paper. Glass (76%) and Metal (67%) stayed reliable, and the F1 threshold rose to 0.295 (peak F1 0.61), meaning fewer false positives.
 
+<div align="center">
 <table><tr>
 <td align="center"><img src="ml_output/document_images/phase3_val_batch0_pred.jpg" width="250"><br><sub><strong>Fig. 14.</strong> Strong confidence on metallic shapes.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase3_val_batch1_pred.jpg" width="250"><br><sub><strong>Fig. 15.</strong> Cardboard read as Biodegradable.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase3_val_batch2_pred.jpg" width="250"><br><sub><strong>Fig. 16.</strong> Organic piles mostly separated.</sub></td>
 </tr></table>
+</div>
 
 Spatial separation on dense piles improved further, though not fully solved, and a new bias appeared: Cardboard items often read as Biodegradable. With Paper's background-miss problem resolved, Phase 4 shifted focus to adding negative (no-object) examples instead of more data.
 
@@ -77,19 +101,30 @@ Spatial separation on dense piles improved further, though not fully solved, and
 
 Phase 4 added 800 negative examples to calibrate the background, raised training resolution to 800px, and applied adaptive equalization for pale-on-pale objects. mAP50 rose to 0.689, a 12.4% gain over Phase 3.
 
-<table><tr>
-<td align="center"><img src="ml_output/document_images/phase4_metrics.png" width="260"><br><sub><strong>Fig. 17.</strong> Paper stabilizes at 0.758 mAP50.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase4_confusion_matrix_normalized.png" width="260"><br><sub><strong>Fig. 18.</strong> More conservative: fewer false positives.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase4_BoxF1_curve.png" width="260"><br><sub><strong>Fig. 19.</strong> Every class peaks higher (avg. 0.67).</sub></td>
-</tr></table>
+<div align="center">
+    <img src="ml_output/document_images/phase4_metrics.png" width="600">
+    <p align="center"><strong>Fig. 17. </strong>Paper stabilizes at 0.758 mAP50; Glass stays strong at 0.819.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase4_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 18. </strong>The model is now more conservative: fewer false positives.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase4_BoxF1_curve.png" width="600">
+    <p align="center"><strong>Fig. 19. </strong>Every class peaks higher on the F1 scale (avg. 0.67).<p>
+</div>
 
 Background calibration worked: false positives dropped across every category and Paper reached a 74% true-positive rate. The tradeoff is that 61% of Biodegradable items now read as background instead of being detected — the model got more conservative, missing vague shapes rather than flagging clean surfaces, which suits real-world use.
 
+<div align="center">
 <table><tr>
 <td align="center"><img src="ml_output/document_images/phase4_val_batch0_pred.jpg" width="250"><br><sub><strong>Fig. 20.</strong> Plastic textures at 0.9-1.0 confidence.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase4_val_batch1_pred.jpg" width="250"><br><sub><strong>Fig. 21.</strong> Complex backgrounds, zero false positives.</sub></td>
 <td align="center"><img src="ml_output/document_images/phase4_biodegradable.jpg" width="250"><br><sub><strong>Fig. 22.</strong> Organic piles still over-detected.</sub></td>
 </tr></table>
+</div>
 
 Higher resolution paid off on plastic's crinkled, transparent textures, and the negative examples eliminated false positives on complex backgrounds. Organic piles still over-detect and need more NMS tuning, but the model was otherwise ready to export into the app.
 
@@ -97,10 +132,15 @@ Higher resolution paid off on plastic's crinkled, transparent textures, and the 
 
 Phase 5 started by checking the dataset split, not the model: Biodegradable, Cardboard, and Glass had as few as 3-6 images each in the test set despite being well represented in training. Fixing this — moving images from training into test in Roboflow — grew the test set from 220 to 370 images, using the same preprocessing as Phase 4.
 
-<table><tr>
-<td align="center"><img src="ml_output/document_images/phase5_confusion_matrix_normalized.png" width="320"><br><sub><strong>Fig. 23.</strong> Biodegradable reaches 82% on a balanced split.</sub></td>
-<td align="center"><img src="ml_output/document_images/phase5_BoxPR_curve.png" width="320"><br><sub><strong>Fig. 24.</strong> Plastic trails every class at every threshold.</sub></td>
-</tr></table>
+<div align="center">
+    <img src="ml_output/document_images/phase5_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 23. </strong>With a balanced test split, Biodegradable reaches 82% accuracy.<p>
+</div>
+
+<div align="center">
+    <img src="ml_output/document_images/phase5_BoxPR_curve.png" width="600">
+    <p align="center"><strong>Fig. 24. </strong>Glass leads the precision-recall curve; Plastic trails at every threshold.<p>
+</div>
 
 Retraining on the fixed split gave mAP50 0.699. Glass was strongest (0.849); Plastic was weakest (0.536) despite having the most training examples of any class — the PR curve confirms this is a real weakness, not a threshold artifact.
 
