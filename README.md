@@ -215,11 +215,10 @@ The app ships with two runtime files: `assets/best_float32.tflite` (the trained 
 
 To retrain, run `notebooks/train_trash_tracker.ipynb`. It downloads the dataset from Roboflow, audits class balance, trains YOLO26 at 800px, validates and tests on `ml_output/test_images/`, and exports a TFLite file to copy into `assets/`. Dataset downloads and training runs are all written to `ml_output/` at the repo root, so they stay out of the `notebooks/` folder and out of the repo root's way.
 
-Setup (one time): from inside `notebooks/`, run `setup_env.bat` to create the `trash_tracker` conda environment and register it as a Jupyter kernel. Each session after that, from inside `notebooks/`:
+Setup (one time): from inside `notebooks/`, run `setup_env.bat` to create the `trash_tracker` conda environment and register it as a Jupyter kernel. Also copy `notebooks/.env.example` to `notebooks/.env` and fill in your Roboflow API key — the notebook loads it from there automatically. Each session after that, from inside `notebooks/`:
 
 ```bash
 conda activate trash_tracker
-set ROBOFLOW_API_KEY=your_key_here
 jupyter notebook --notebook-dir="%cd%"
 ```
 
