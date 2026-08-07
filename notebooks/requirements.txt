@@ -1,4 +1,4 @@
-ultralytics>=8.3.0
+ultralytics==8.4.82  # pinned: 8.4.83+ dropped direct Windows TFLite export in favor of Linux/macOS-only LiteRT
 roboflow
 matplotlib
 pyyaml

@@ -193,7 +193,7 @@ jupyter notebook --notebook-dir="%cd%"
 
 Select the "Python (trash_tracker)" kernel before running cells.
 
-TFLite export only works on Linux x86 or macOS, since Ultralytics moved to the LiteRT export path. It fails on Windows — export through WSL2, a cloud notebook, or the Ultralytics Platform instead.
+Ultralytics 8.4.83+ replaced direct TFLite export with a Linux/macOS-only "LiteRT" tool, so `requirements.txt` pins `ultralytics==8.4.82` to keep using the older TensorFlow-based exporter, which works on Windows. Don't bump past 8.4.82 without checking whether LiteRT has added Windows support.
 
 A few rules keep the runtime model consistent: do not append raw bytes or JSON to `.tflite` files, replace `assets/best_float32.tflite` only with a clean Ultralytics export, keep one active runtime model in `assets/`, and keep `labels.txt`'s class order aligned with the training `data.yaml`.
 
