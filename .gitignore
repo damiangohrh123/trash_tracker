@@ -73,3 +73,6 @@ ml_output/trash_tracker-*/
 # Base model weights auto-downloaded by ultralytics (e.g. yolo26n.pt, yolo26s.pt)
 /*.pt
 ml_output/*.pt
+
+# INT8 calibration data auto-downloaded by ultralytics during TFLite export
+ml_output/calibration_image_sample_data_*.npy
