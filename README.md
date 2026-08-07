@@ -151,6 +151,33 @@ Retraining on the fixed split gave mAP50 0.699. Glass was strongest (0.849); Pla
 
 Validation images pointed to look-alike materials: a glass measuring cup read as Metal (shiny surface), a frosted plastic bottle read as Glass, and a grey egg carton read as Metal (slightly metallic texture). Training curves showed no overfitting, plateauing around epoch 25-30 before stopping at epoch 63 — the model had converged, so more epochs wouldn't fix the Glass/Metal/Plastic confusion. Phase 5 moved to a larger model instead, trading file size for the extra capacity needed to tell these materials apart.
 
+### 3.6 Phase 6: Evaluating the Larger Model
+
+Phase 6 tested the larger model from Phase 5's capacity upgrade, training on the same fixed dataset split. It ran 135 epochs (~2.5 hours) before early stopping, with the best weights saved at epoch 105.
+
+mAP50 rose to 0.723, up from 0.699 in Phase 5 — a real but modest gain. Glass drove most of it, climbing to 0.897 and no longer meaningfully confused with Metal. Plastic barely moved (0.536 → 0.559) and still trails every other class on the precision-recall curve, suggesting its weakness is visual ambiguity rather than model capacity.
+
+<div align="center">
+    <img src="ml_output/document_images/phase6_confusion_matrix_normalized.png" width="600">
+    <p align="center"><strong>Fig. 26. </strong>Glass is no longer confused with Metal, but Cardboard now has the biggest background-miss rate (25%).<p>
+</div>
+
+The bigger surprise was Cardboard, not flagged as a problem before: only 57% of true Cardboard instances are classified correctly, 25% are missed as background — the worst rate of any class — and 13% are confused with Paper.
+
+<div align="center">
+    <img src="ml_output/document_images/phase6_BoxPR_curve.png" width="600">
+    <p align="center"><strong>Fig. 27. </strong>Glass leads the pack; Plastic still trails every class at every threshold.<p>
+</div>
+
+Training curves showed healthy convergence — validation loss tracked training loss with no divergence, and metrics plateaued around epoch 30, well before the epoch-135 stop. Validation images matched the numbers: a twisted plastic bottle still split into two boxes (0.9 and 0.3 confidence), and a cardboard egg carton was misread as PLASTIC.
+
+<div align="center">
+    <img src="ml_output/document_images/phase6_val_batch0_pred.jpg" width="700">
+    <p align="center"><strong>Fig. 28. </strong>Correct calls at low confidence, a duplicate box on one bottle, and an egg carton misread as Plastic.<p>
+</div>
+
+The larger model paid off for Glass but not Plastic, pointing away from model capacity as the fix there. Cardboard's new background-miss rate is the next thing to dig into — likely needs more negative examples with cardboard-like textures, or a rebalance now that some of Paper's old confusion has shifted onto it.
+
 ## 4. Model Workflow and Maintenance
 
 The app ships with two runtime files: `assets/best_float32.tflite` (the trained model) and `assets/labels.txt` (the class names, in the same order the model outputs them).
