@@ -6,3 +6,17 @@ pillow
 jupyter
 ipykernel
 python-dotenv
+
+# TFLite export chain for ultralytics==8.4.82 (export_saved_model -> onnx2tf -> tflite).
+# Installed up front so the notebook's export cell doesn't trigger Ultralytics'
+# lazy AutoUpdate one package at a time (which needs a kernel restart per package).
+tensorflow>=2.0.0,<=2.19.0
+onnx>=1.12.0,<2.0.0
+onnxruntime
+onnxslim>=0.1.82
+onnx2tf>=1.26.3,<1.29.0
+tf_keras<=2.19.0
+sng4onnx>=1.0.1
+onnx_graphsurgeon>=0.3.26
+ai-edge-litert>=1.2.0
+onnxruntime-gpu
